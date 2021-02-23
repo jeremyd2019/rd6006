@@ -1,9 +1,11 @@
+# vim: set fileencoding=utf-8 :
+from __future__ import print_function
 import minimalmodbus
 
 minimalmodbus.TIMEOUT = 0.5
 
 
-class RD6006:
+class RD6006(object):
     def __init__(self, port, address=1, baudrate=115200):
         self.port = port
         self.address = address
@@ -11,20 +13,20 @@ class RD6006:
         self.instrument.serial.baudrate = baudrate
         regs = self._read_registers(0, 4)
         self.sn = regs[1] << 16 | regs[2]
-        self.fw = regs[3] / 100
+        self.fw = regs[3] / 100.
         self.type = int(regs[0] / 10)
 
         if self.type == 6012 or self.type == 6018:
             print("RD6012 or RD6018 detected")
-            self.voltres = 100
-            self.ampres = 100
+            self.voltres = 100.
+            self.ampres = 100.
         else:
             print("RD6006 or other detected")
-            self.voltres = 100
-            self.ampres = 1000
+            self.voltres = 100.
+            self.ampres = 1000.
 
     def __repr__(self):
-        return f"RD6006 SN:{self.sn} FW:{self.fw}"
+        return "RD6006 SN:{} FW:{}".format(self.sn, self.fw)
 
     def _read_register(self, register):
         try:
@@ -50,46 +52,46 @@ class RD6006:
         """reads the 4 register of a Memory[0-9] and print on a single line"""
         regs = self._read_registers(M * 4 + 80, 4)
         print(
-            f"M{M}: {regs[0] / self.voltres:4.1f}V, {regs[1] / self.ampres:3.3f}A, OVP:{regs[2] / self.voltres:4.1f}V, OCP:{regs[3] / self.ampres:3.3f}A"
+            "M{}: {:4.1f}V, {:3.3f}A, OVP:{:4.1f}V, OCP:{:3.3f}A".format(M, regs[0] / self.voltres, regs[1] / self.ampres, regs[2] / self.voltres, regs[3] / self.ampres)
         )
 
     def status(self):
         regs = self._read_registers(0, 84)
         print("== Device")
-        print(f"Model   : {regs[0]/10}")
-        print(f"SN      : {(regs[1]<<16 | regs[2]):08d}")
-        print(f"Firmware: {regs[3]/100}")
-        print(f"Input   : {regs[14] / self.voltres}V")
+        print("Model   : {}".format(regs[0]/10.))
+        print("SN      : {:08d}".format(regs[1]<<16 | regs[2]))
+        print("Firmware: {}".format(regs[3]/100.))
+        print("Input   : {}V".format(regs[14] / self.voltres))
         if regs[4]:
             sign = -1
         else:
             sign = +1
-        print(f"Temp    : {sign * regs[5]}°C")
+        print("Temp    : {}°C".format(sign * regs[5]))
         if regs[34]:
             sign = -1
         else:
             sign = +1
-        print(f"TempProb: {sign * regs[35]}°C")
+        print("TempProb: {}°C".format(sign * regs[35]))
         print("== Output")
-        print(f"Voltage : {regs[10] / self.voltres}V")
-        print(f"Current : {regs[11] / self.ampres}A")
-        print(f"Energy  : {regs[12]/1000}Ah")
-        print(f"Power   : {regs[13]/100}W")
+        print("Voltage : {}V".format(regs[10] / self.voltres))
+        print("Current : {}A".format(regs[11] / self.ampres))
+        print("Energy  : {}Ah".format(regs[12]/1000.))
+        print("Power   : {}W".format(regs[13]/100.))
         print("== Settings")
-        print(f"Voltage : {regs[8] / self.voltres}V")
-        print(f"Current : {regs[9] / self.ampres}A")
+        print("Voltage : {}V".format(regs[8] / self.voltres))
+        print("Current : {}A".format(regs[9] / self.ampres))
         print("== Protection")
-        print(f"Voltage : {regs[82] / self.voltres}V")
-        print(f"Current : {regs[83] / self.ampres}A")
+        print("Voltage : {}V".format(regs[82] / self.voltres))
+        print("Current : {}A".format(regs[83] / self.ampres))
         print("== Battery")
         if regs[32]:
             print("Active")
-            print(f"Voltage : {regs[33] / self.voltres}V")
+            print("Voltage : {}V".format(regs[33] / self.voltres))
         print(
-            f"Capacity: {(regs[38] <<16 | regs[39])/1000}Ah"
+            "Capacity: {}Ah".format((regs[38] <<16 | regs[39])/1000.)
         )  # TODO check 8 or 16 bits?
         print(
-            f"Energy  : {(regs[40] <<16 | regs[41])/1000}Wh"
+            "Energy  : {}Wh".format((regs[40] <<16 | regs[41])/1000.)
         )  # TODO check 8 or 16 bits?
         print("== Memories")
         for m in range(10):
@@ -145,19 +147,19 @@ class RD6006:
 
     @property
     def measpower(self):
-        return self._read_register(13) / 100
+        return self._read_register(13) / 100.
 
     @property
     def measah(self):
         return (
             self._read_register(38) << 16 | self._read_register(39)
-        ) / 1000  # TODO check 16 or 8 bit
+        ) / 1000.  # TODO check 16 or 8 bit
 
     @property
     def measwh(self):
         return (
             self._read_register(40) << 16 | self._read_register(41)
-        ) / 1000  # TODO check 16 or 8 bit
+        ) / 1000.  # TODO check 16 or 8 bit
 
     @property
     def battmode(self):
